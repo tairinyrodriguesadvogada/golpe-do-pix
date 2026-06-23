@@ -1,0 +1,13 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "<https://golpe-do-pix.tairinyemarcio.adv.br/>; rel=\"canonical\""
+        }
+      ]
+    }
+  ]
+}
