@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://golpe-do-pix.tairinyemarcio.adv.br/sitemap.xml
