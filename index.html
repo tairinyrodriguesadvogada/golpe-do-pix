@@ -561,6 +561,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         </div>
       </div>
       <div style="margin-bottom:20px">
+        <label style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.7);display:block;margin-bottom:8px">Já foi descontado de você? (empréstimo que não contratou)</label>
+        <div style="position:relative">
+          <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.5);font-size:14px;pointer-events:none">R$</span>
+          <input type="number" id="gp-debitado" placeholder="Ex: 1200 (deixe 0 se não houve)" min="0" value="0"
+            style="width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);color:#fff;font-size:16px;font-weight:600;padding:14px 14px 14px 44px;border-radius:8px;outline:none;box-sizing:border-box;font-family:inherit;transition:border-color 0.2s;-moz-appearance:textfield"
+            onfocus="this.style.borderColor='#C9A84C'" onblur="this.style.borderColor='rgba(255,255,255,0.15)'">
+        </div>
+        <p style="font-size:11px;color:rgba(255,255,255,0.45);margin:6px 0 0;line-height:1.5">Parcelas já cobradas na sua conta podem ser devolvidas <strong style="color:rgba(255,255,255,0.7)">em dobro</strong> (art. 42 do CDC).</p>
+      </div>
+
+      <div style="margin-bottom:20px">
         <label style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.7);display:block;margin-bottom:8px">Valor de danos emocionais sofridos (0 a 10)</label>
         <div style="position:relative">
           <span style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.5);font-size:14px;pointer-events:none">🎯</span>
@@ -640,21 +651,28 @@ function gpCalcular() {
   var dano  = Math.min(Math.max(parseFloat(document.getElementById('gp-dano').value)||5, 0), 10);
   if (valor <= 0) { alert('Informe o valor perdido.'); return; }
 
-  var moraisMin = valor >= 5000 ? 5000 : 3000;
-  var moraisMax = valor >= 10000 ? 10000 : (valor >= 5000 ? 8000 : 5000);
+  /* Dano moral — faixa do TJDFT para fraude com perda de valores: R$ 5.000 a R$ 20.000
+     (skill bancario/danos-morais). Ajustada pelo grau de abalo informado. */
+  var moraisMin = valor >= 10000 ? 8000 : (valor >= 5000 ? 6000 : 5000);
+  var moraisMax = valor >= 10000 ? 20000 : (valor >= 5000 ? 15000 : 10000);
   moraisMin = Math.round(moraisMin * (0.8 + dano*0.04));
   moraisMax = Math.round(moraisMax * (0.8 + dano*0.04));
 
-  var totalMin = valor + moraisMin;
-  var totalMax = valor + moraisMax;
+  /* Restituição em dobro do que foi indevidamente debitado — art. 42, par. unico, do CDC.
+     Incide sobre parcelas de emprestimos fraudulentos ja descontadas, nao sobre o Pix enviado. */
+  var debitado = parseFloat(document.getElementById('gp-debitado') ? document.getElementById('gp-debitado').value : 0) || 0;
+  var emDobro = debitado * 2;
 
-  gpData = {valor:valor, moraisMin:moraisMin, moraisMax:moraisMax, totalMin:totalMin, totalMax:totalMax,
+  var totalMin = valor + emDobro + moraisMin;
+  var totalMax = valor + emDobro + moraisMax;
+
+  gpData = {valor:valor, debitado:debitado, emDobro:emDobro, moraisMin:moraisMin, moraisMax:moraisMax, totalMin:totalMin, totalMax:totalMax,
     total: totalMin};
 
   var fmt = function(v){ return 'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); };
   document.getElementById('gp-itens').innerHTML =
     '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="font-size:13px;color:rgba(255,255,255,0.6)">Valor a recuperar (ressarcimento)</span><span style="font-size:17px;font-weight:700;color:#C9A84C">'+fmt(valor)+'</span></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="font-size:13px;color:rgba(255,255,255,0.6)">Danos morais estimados</span><span style="font-size:17px;font-weight:700;color:#C9A84C">'+fmt(moraisMin)+' – '+fmt(moraisMax)+'</span></div>';
+    (emDobro>0?'<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="font-size:13px;color:rgba(255,255,255,0.6)">Descontos indevidos em dobro (art. 42 CDC)</span><span style="font-size:17px;font-weight:700;color:#C9A84C">'+fmt(emDobro)+'</span></div>':'')+'<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span style="font-size:13px;color:rgba(255,255,255,0.6)">Danos morais estimados</span><span style="font-size:17px;font-weight:700;color:#C9A84C">'+fmt(moraisMin)+' – '+fmt(moraisMax)+'</span></div>'+'<div style="margin-top:16px;padding:14px;background:rgba(255,255,255,0.04);border-left:3px solid #C9A84C"><p style="font-size:12px;color:rgba(255,255,255,0.62);line-height:1.65;margin:0">⚠️ <strong style="color:rgba(255,255,255,0.85)">Estimativa parcial.</strong> O valor final de uma ação costuma superar esta conta, porque só a análise dos seus documentos revela todos os direitos do caso. Não substitui análise jurídica individual.</p></div>';
   document.getElementById('gp-total').textContent = fmt(totalMin)+' – '+fmt(totalMax);
   document.getElementById('gp-result').style.display = 'block';
 }
