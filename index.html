@@ -648,7 +648,9 @@ var gpData = {};
 
 function gpCalcular() {
   var valor = parseFloat(document.getElementById('gp-valor').value) || 0;
-  var dano  = Math.min(Math.max(parseFloat(document.getElementById('gp-dano').value)||5, 0), 10);
+  var _d = parseFloat(document.getElementById('gp-dano').value);
+  if (isNaN(_d)) _d = 5;                       /* so usa 5 se estiver VAZIO, nao se for 0 */
+  var dano  = Math.min(Math.max(_d, 0), 10);
   if (valor <= 0) { alert('Informe o valor perdido.'); return; }
 
   /* Dano moral — faixa do TJDFT para fraude com perda de valores: R$ 5.000 a R$ 20.000
